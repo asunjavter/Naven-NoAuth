@@ -2,13 +2,8 @@ name: Build and Release Java Project
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'BuildLog.md'
-  workflow_dispatch:
-env:
-  BUILD_TYPE: Release
+    tags:
+      - 'v*'
 
 jobs:
   build-and-release:
@@ -17,25 +12,42 @@ jobs:
       contents: write
 
     steps:
+      # 1. 拉取代码
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. 设置 Java 环境
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '11'  # 替换为项目使用的 Java 版本（如 8、11、17）
-          distribution: 'temurin'  # 推荐使用 Adoptium Temurin（原 AdoptOpenJDK）
+          java-version: '17'
+          distribution: 'temurin'
 
+      # 3. 自动检查并生成 Maven Wrapper 文件（核心步骤）
+      - name: Check and generate Maven Wrapper files if missing
+        run: |
+          # 检查 maven-wrapper.jar 或 maven-wrapper.properties 是否缺失
+          if [ ! -f .mvn/wrapper/maven-wrapper.jar ] || [ ! -f .mvn/wrapper/maven-wrapper.properties ]; then
+            echo "Maven Wrapper files missing, generating..."
+            # 使用环境预装的 Maven 生成 Wrapper 文件（无需 mvnw）
+            mvn wrapper:wrapper -Dmaven.version=3.9.5  # 可选：指定 Maven 版本
+          else
+            echo "Maven Wrapper files exist, skipping generation."
+          fi
+
+      # 4. 给 mvnw 添加可执行权限
       - name: Make mvnw executable
         run: chmod +x ./mvnw
 
+      # 5. 使用 mvnw 构建项目
       - name: Build with mvnw
-        run: ./mvnw clean package -DskipTests  # 跳过测试加速构建，生产环境建议保留测试
+        run: ./mvnw clean package -DskipTests
 
+      # 6. 创建 Release 并上传产物
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/*.jar 
+          files: target/*.jar
           draft: false
           prerelease: false
         env:
