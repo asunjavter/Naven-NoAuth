@@ -2,8 +2,13 @@ name: Build and Release Java Project
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths:
+      - 'BuildLog.md'
+  workflow_dispatch:
+env:
+  BUILD_TYPE: Release
 
 jobs:
   build-and-release:
