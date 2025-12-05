@@ -2,8 +2,13 @@ name: Build and Release Java Project
 
 on:
   push:
-    tags:
-      - 'v1.0.0'
+    branches:
+      - main
+    paths:
+      - 'BuildLog.md'
+  workflow_dispatch:
+env:
+  BUILD_TYPE: Release
 
 jobs:
   build-and-release:
@@ -47,6 +52,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v1.0.0
           files: target/*.jar
           draft: false
           prerelease: false
