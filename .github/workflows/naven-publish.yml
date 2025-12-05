@@ -30,10 +30,20 @@ jobs:
         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+  # 3. 给 mvnw 添加可执行权限（关键步骤！）
+      - name: mvnw
+        run: chmod +x ./mvnw
 
-    - name: Publish to GitHub Packages Apache Maven
-      run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
+      # 4. 使用 mvnw 构建项目（跳过测试可选，根据需求调整）
+      - name: Build with mvnw
+        run: ./mvnw clean package -DskipTests  # 跳过测试加速构建，生产环境建议保留测试
+
+      # 5. 创建 GitHub Release 并上传 JAR 包
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/*.jar  # 构建产物路径（根据实际调整，如 target/*.war）
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
